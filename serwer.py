@@ -2,7 +2,7 @@ import socket
 import threading
 
 HOST = '10.112.3.32'
-PORT = '12000'
+PORT = 12000
 clients = []
 
 def handle_client(client_socket, address):

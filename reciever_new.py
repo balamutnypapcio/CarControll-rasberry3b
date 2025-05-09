@@ -1,15 +1,38 @@
 import socket
 import threading
-from datetime import datetime
 
 HOST = '10.112.3.4'
 PORT = 12000
 clients = []
 
+# Zmienne do przechowywania stanu
+car_state = {
+    "gas": 0,
+    "brake": 0,
+    "gear": "0"
+}
+
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((HOST, PORT))
 server.listen(2)
+
+def update_car_state(message):
+    """Aktualizuje stan samochodu na podstawie otrzymanej wiadomości"""
+    try:
+        key, value = message.split(": ")
+        value = value.strip()  # Usuwa whitespace i znaki nowej linii
+        
+        if key == "Gas":
+            car_state["gas"] = int(value)
+        elif key == "Brake":
+            car_state["brake"] = int(value)
+        elif key == "Gear":
+            car_state["gear"] = value
+            
+        print(f"Aktualny stan pojazdu: {car_state}")
+    except Exception as e:
+        print(f"Błąd podczas przetwarzania wiadomości: {e}")
 
 def handle_client(client_socket, address):
     print(f"Połączono z {address}")
@@ -18,19 +41,11 @@ def handle_client(client_socket, address):
             data = client_socket.recv(1024)
             if not data:
                 break
-            
-            # Dekodowanie otrzymanych danych
+                
+            # Dekodowanie i wyświetlenie wiadomości
             message = data.decode("utf-8")
-            
-            # Dodanie znacznika czasu
-            timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Zapisanie danych do pliku
-            with open("input_data.txt", "a") as file:
-                # Formatowanie linii z timestampem i adresem klienta
-                log_line = f"[{timestamp}] {address} - {message}"
-                file.write(log_line)
-                print(f"Zapisano: {log_line.strip()}")
+            print(f"Otrzymano od {address}: {message.strip()}")
+            update_car_state(message)
                 
         except ConnectionResetError:
             break

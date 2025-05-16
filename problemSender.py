@@ -34,7 +34,7 @@ def main():
             slope_time_left -= 1
 
             # Tworzenie wiadomości i wysyłanie
-            message = f"[{nachylenie},{przeszkoda}]"
+            message = f"[slope {nachylenie},barrier {przeszkoda}]"
             client.send(message.encode())
             print(f"Wysłano: {message}")
 

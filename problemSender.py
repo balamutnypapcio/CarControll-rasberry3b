@@ -11,15 +11,33 @@ def main():
         client.connect((SERVER_IP, PORT))
         print(f"Połączono z serwerem {SERVER_IP}:{PORT}")
 
+        current_slope = 0
+        slope_duration = 0
+        slope_time_left = 0
+
         while True:
-            # Generowanie losowych danych
-            nachylenie = random.randint(0, 100)
-            przeszkoda = random.randint(0, 1)
-            
+            # Szansa na przeszkodę: 10%
+            przeszkoda = 1 if random.random() < 0.1 else 0
+
+            # Obsługa nachylenia
+            if slope_time_left <= 0:
+                if random.choice([True, False]):  # Czy ma być nachylenie?
+                    # Losuj nachylenie od -30 do 30, pomijając 0
+                    current_slope = random.choice([i for i in range(-30, 31) if i != 0])
+                    slope_duration = random.randint(1, 10)
+                    slope_time_left = slope_duration
+                else:
+                    current_slope = 0
+                    slope_time_left = random.randint(1, 10)
+
+            nachylenie = current_slope
+            slope_time_left -= 1
+
             # Tworzenie wiadomości i wysyłanie
             message = f"[{nachylenie},{przeszkoda}]"
             client.send(message.encode())
-            
+            print(f"Wysłano: {message}")
+
             # Czekaj 1 sekundę przed następnym wysłaniem
             time.sleep(1)
 

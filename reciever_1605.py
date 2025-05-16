@@ -39,7 +39,7 @@ def parse_environment_data(data):
     """Parse data from problemSender.py"""
     try:
         # Data format example: "[30,1]"
-        match = re.match(r'\[(-?\d+),(\d+)\]', data)
+         match = re.match(r'\[nachylenie\s+(-?\d+),\s*przeszkoda\s+(\d+)\]', data)
         if match:
             nachylenie = int(match.group(1))
             przeszkoda = int(match.group(2))

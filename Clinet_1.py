@@ -17,9 +17,13 @@ state = {
     "bieg": "0"     # 0, 1, 2, 3, 4, 5, R
 }
 
-# Zmienne do śledzenia czasu trzymania klawiszy
+# Zmienne do śledzenia czasu trzymania i opadania klawiszy
 gaz_start_time = None
 hamulec_start_time = None
+gaz_release_time = None
+hamulec_release_time = None
+gaz_peak_value = 0
+hamulec_peak_value = 0
 
 def send_message(client, message):
     try:
@@ -28,15 +32,21 @@ def send_message(client, message):
     except:
         print("Błąd wysyłania danych do serwera")
 
-def update_value(current_value, start_time):
+def update_value(current_value, start_time, release_time, peak_value):
     if start_time is not None:
+        # Zwiększanie wartości podczas trzymania klawisza
         elapsed_time = time.time() - start_time
         new_value = min(current_value + elapsed_time * 5, 100)  # 5 jednostek na sekundę
+        return new_value
+    elif release_time is not None:
+        # Zmniejszanie wartości po puszczeniu klawisza
+        elapsed_time = time.time() - release_time
+        new_value = max(peak_value - elapsed_time * 5, 0)  # Taki sam współczynnik opadania
         return new_value
     return current_value
 
 def main():
-    global state, gaz_start_time, hamulec_start_time
+    global state, gaz_start_time, hamulec_start_time, gaz_release_time, hamulec_release_time, gaz_peak_value, hamulec_peak_value
     
     # Połączenie z serwerem
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -57,8 +67,10 @@ def main():
                 message = ""
                 if event.key == pygame.K_UP:
                     gaz_start_time = time.time()  # Rozpoczęcie trzymania gazu
+                    gaz_release_time = None  # Reset opadania
                 elif event.key == pygame.K_DOWN:
                     hamulec_start_time = time.time()  # Rozpoczęcie trzymania hamulca
+                    hamulec_release_time = None  # Reset opadania
                 elif event.key == pygame.K_0:
                     state["bieg"] = "0"
                     message = f"Bieg: {state['bieg']}\n"
@@ -88,9 +100,13 @@ def main():
                 message = ""
                 if event.key == pygame.K_UP:
                     gaz_start_time = None  # Zatrzymanie liczenia gazu
+                    gaz_release_time = time.time()  # Rozpoczęcie opadania
+                    gaz_peak_value = state["gaz"]  # Zapisanie wartości szczytowej
                     message = f"Gaz: {state['gaz']}\n"
                 elif event.key == pygame.K_DOWN:
                     hamulec_start_time = None  # Zatrzymanie liczenia hamulca
+                    hamulec_release_time = time.time()  # Rozpoczęcie opadania
+                    hamulec_peak_value = state["hamulec"]  # Zapisanie wartości szczytowej
                     message = f"Hamulec: {state['hamulec']}\n"
                 
                 if message:
@@ -100,8 +116,8 @@ def main():
         previous_gaz = state["gaz"]
         previous_hamulec = state["hamulec"]
         
-        state["gaz"] = update_value(state["gaz"], gaz_start_time)
-        state["hamulec"] = update_value(state["hamulec"], hamulec_start_time)
+        state["gaz"] = update_value(state["gaz"], gaz_start_time, gaz_release_time, gaz_peak_value)
+        state["hamulec"] = update_value(state["hamulec"], hamulec_start_time, hamulec_release_time, hamulec_peak_value)
         
         # Wysłanie aktualizacji, jeśli wartości się zmieniły
         if state["gaz"] != previous_gaz:
@@ -114,10 +130,5 @@ def main():
     client.close()
     pygame.quit()
 
-if __name__ == "__.Tags:
-- Python
-- Raspberry Pi
-- Pygame
-- Socket Programming
-- Client-Server
-- Real-time Input
+if __name__ == "__main__":
+    main()
